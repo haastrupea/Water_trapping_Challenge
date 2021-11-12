@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/jointjs/2.1.0/joint.css" />
+    <style>
+        .flex {
+            display: flex;
+            margin: 20px 100px;
+        }
+
+        .flex-col {
+            flex-direction: column;
+        }
+        .center {
+            justify-content: center;
+            align-items: center;
+        }
+        .border {
+            border: 1px solid;
+        }
+    </style>
+</head>
+<body>
+    <!-- content -->
+    <div class="flex flex-col center">
+    
+    <div id="showInformation" class="border">
+        <div class="flex">
+            <span>Input Heights: [</span>
+            <span id="input"></span>]
+        </div>
+        <div class="flex">
+            <span>Unit of Water trapped:</span>
+            <span id="result">0</span>
+        </div>
+    </div>
+    <div id="paper"></div>
+</div>
+    <!-- dependencies
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.3.3/backbone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jointjs/2.1.0/joint.js"></script> -->
+        <!-- dependencies -->
+        <script src="node_modules/jquery/dist/jquery.js"></script>
+        <script src="node_modules/lodash/lodash.js"></script>
+        <script src="node_modules/backbone/backbone.js"></script>
+        <script src="node_modules/jointjs/dist/joint.js"></script>
+
+    <!-- code -->
+    <script src="water_tapping.js"></script>
+    <script type="text/javascript">
+
+(function() {
+
+var graph = new joint.dia.Graph;
+
+const canvaswidth = 800
+const canvasHeight = 500
+new joint.dia.Paper({ el: $('#paper'), width: canvaswidth, height: canvasHeight, gridSize: 1, model: graph });
+
+//bar chart configuration
+const margin = 200;
+const padding = 30;
+const x = 90,
+    y = 70,
+    width = canvaswidth - margin,
+    height = (canvasHeight - margin);
+
+// dummy bar chart data
+const data2 = [0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]
+const data = [4,2,0,3,2,5]
+
+// render data on the web page
+const input = document.getElementById('input')
+const result = document.getElementById('result')
+
+input.innerHTML = data.toLocaleString()
+result.innerHTML = trappingV2(data)
+
+// get max value in a given data
+const dataMaxValue = Math.max(...data)
+
+// get length of a given data
+const dataLength = data.length
+
+
+/**
+ * Generate Y scale position in px
+ * @param {number} value Value <= dataMaxValue. find the position on the Y axis
+ * @return {number} postion on the y axis on px
+*/
+function generateYScalePosition (value) {
+    return (g.scale.linear([0,dataMaxValue],[0, height], value))+padding
+}
+
+/**
+ * Generate X scale position in px
+ * @param {number} value where Value <= dataLength. find the position on the X axis
+ * @return {number} postion on the X axis on px
+ */
+function generateXScalePosition (value) {
+    return (g.scale.linear([0,dataLength],[0, width], value))+padding
+}
+
+    // create x and Y Axis line
+    var xyAxis = new joint.shapes.standard.Path();
+        xyAxis.resize(width + padding, height +padding);
+        xyAxis.position(x, y);
+        xyAxis.attr('root/title', 'axis line');
+        xyAxis.attr('body/refD', 'H -1 V -1');
+        xyAxis.attr('body/fill', 'none');
+        xyAxis.addTo(graph);
+
+    for (let index = 0; index <= dataMaxValue; index++) {
+        // generate tick position on y axis
+        const positionOnY = generateYScalePosition(index)
+
+        // add tick on y axis
+        const tick = new joint.shapes.standard.Path()
+            tick.resize(5,1)
+            tick.position(x,y)
+            tick.translate(0, positionOnY)
+            tick.attr('body/refD','H 1')
+            tick.attr('body/stroke-width','.5')
+            tick.addTo(graph)
+
+        // add labels on y axis
+        const yLabel = new joint.shapes.standard.TextBlock();
+            yLabel.resize(15,15);
+            yLabel.position(x,y-6);
+            yLabel.translate(-20,positionOnY)
+            yLabel.attr('body/fill','none')
+            yLabel.attr('body/stroke-width',0)
+            yLabel.attr('label/text',dataMaxValue - index)
+            yLabel.addTo(graph)
+
+
+    }
+    // Plot the bar chart
+    for (let index = 0; index < dataLength; index++) {
+
+        //bars position on Y and X axis
+        const positionOnY = generateYScalePosition(data[index]) - padding
+        const positionOnX = generateXScalePosition(index)
+
+        // width of bar
+        const barWidth = width/dataLength
+
+        // generate bar for each height
+        let bar = new joint.shapes.standard.Rectangle();
+            bar.resize(barWidth,(positionOnY))
+            bar.position(positionOnX + (x - padding), y + height + padding)
+            bar.translate(0, -(positionOnY))
+            bar.attr('root/title', 'height of block');
+            bar.attr('body/stroke', 'none')
+            bar.attr('body/fill', 'black');
+            bar.addTo(graph);
+            
+            const trapped = waterTrappedPerHeight(data, index, data[index])
+            // when the current bar can trap water
+            if(trapped !== 0){
+                //clone current bar
+                const waterTrappedBar  = bar.clone()
+
+                // calculate the postion of the trapped water bar on y axis
+                const waterTrappedPositionOnY = generateYScalePosition(trapped) - padding
+                
+                // configure the water trapped bar
+                waterTrappedBar.resize(barWidth, waterTrappedPositionOnY)
+                waterTrappedBar.translate(0, -waterTrappedPositionOnY)
+                waterTrappedBar.attr('root/title', 'Water trapped within the height');
+                waterTrappedBar.attr('body/fill', 'blue')
+
+                // add to graph
+                waterTrappedBar.addTo(graph)
+            }
+    }
+
+
+
+
+
+
+
+
+})()
+
+    </script>
+</body>
+</html>

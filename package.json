@@ -1,0 +1,22 @@
+{
+  "name": "water_trapping_challenge",
+  "version": "1.0.0",
+  "description": "",
+  "main": "water_tapping.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/haastrupea/Water_trapping_Challenge.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/haastrupea/Water_trapping_Challenge/issues"
+  },
+  "homepage": "https://github.com/haastrupea/Water_trapping_Challenge#readme",
+  "dependencies": {
+    "jointjs": "^3.4.4"
+  }
+}
